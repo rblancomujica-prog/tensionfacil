@@ -31,7 +31,7 @@
     if (s >= 180 || d >= 120) return {text:"Muy elevada",cls:"very-high"};
     if (s >= 140 || d >= 90) return {text:"Elevada",cls:"high"};
     if (s < 90 || d < 60) return {text:"Baja",cls:"low"};
-    if (s >= 120 || d >= 80) return {text:"Por encima de lo ideal",cls:"high"};
+    if (s >= 120 || d >= 80) return {text:"Lectura registrada",cls:"high"};
     return {text:"Rango habitual",cls:"normal"};
   }
   function sortedReadings() { return [...profile().readings].sort((a,b) => new Date(b.date)-new Date(a.date)); }

@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0d9488">
+  <meta name="description" content="TensiónFácil: registro personal de presión arterial.">
+  <title>TensiónFácil</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js" defer></script>
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-icon" aria-hidden="true">♥</div>
+        <div><h1>TensiónFácil</h1><p>Control personal de presión arterial</p></div>
+      </div>
+      <div class="header-actions">
+        <button class="btn btn-light" id="profilesBtn" type="button">👤 Perfiles</button>
+        <button class="btn btn-light" id="settingsBtn" type="button">⚙ Ajustes</button>
+      </div>
+    </header>
+
+    <div class="profile-strip">Perfil activo: <strong id="activeProfileName">Principal</strong></div>
+
+    <main>
+      <section class="stats-grid" aria-label="Resumen">
+        <article class="stat-card"><span class="stat-label">Última medición</span><strong id="lastReading">--/--</strong><span id="lastStatus" class="status neutral">Sin registros</span></article>
+        <article class="stat-card"><span class="stat-label">Promedio últimos 7 días</span><strong id="avg7">--/--</strong><span class="muted">Sistólica / diastólica</span></article>
+        <article class="stat-card"><span class="stat-label">Lecturas registradas</span><strong id="totalCount">0</strong><span class="muted">En este perfil</span></article>
+      </section>
+
+      <section class="content-grid">
+        <article class="panel">
+          <div class="panel-heading"><div><h2>Nueva medición</h2><p>Registra los valores de tu tensiómetro.</p></div></div>
+          <form id="readingForm">
+            <div class="field-grid">
+              <label>Presión sistólica (mmHg)<input id="systolic" name="systolic" type="number" min="50" max="300" required placeholder="Ej. 120"></label>
+              <label>Presión diastólica (mmHg)<input id="diastolic" name="diastolic" type="number" min="30" max="200" required placeholder="Ej. 80"></label>
+              <label>Pulso (lpm, opcional)<input id="pulse" name="pulse" type="number" min="25" max="250" placeholder="Ej. 72"></label>
+              <label>Fecha y hora<input id="readingDate" name="readingDate" type="datetime-local" required></label>
+            </div>
+            <label>Momento de la medición
+              <select id="period" name="period"><option value="Mañana">Mañana</option><option value="Tarde">Tarde</option><option value="Noche">Noche</option><option value="Otro">Otro</option></select>
+            </label>
+            <label>Notas (opcional)<textarea id="notes" name="notes" rows="2" maxlength="500" placeholder="Medicamentos, síntomas o contexto…"></textarea></label>
+            <p id="formMessage" class="form-message" role="status"></p>
+            <button class="btn btn-primary full-width" type="submit">Guardar medición</button>
+          </form>
+        </article>
+
+        <article class="panel">
+          <div class="panel-heading"><div><h2>Evolución</h2><p>Últimas mediciones del perfil activo.</p></div><select id="chartRange" aria-label="Rango del gráfico"><option value="7">7 días</option><option value="30" selected>30 días</option><option value="90">90 días</option></select></div>
+          <div class="chart-wrap"><canvas id="pressureChart" aria-label="Gráfico de presión arterial" role="img"></canvas><p id="chartFallback" class="muted hidden">El gráfico necesita conexión para cargar su biblioteca. El historial sigue disponible.</p></div>
+          <p class="small-note">El gráfico muestra los valores registrados; no sustituye la interpretación de un profesional de salud.</p>
+        </article>
+      </section>
+
+      <section class="panel history-panel">
+        <div class="panel-heading history-heading"><div><h2>Historial de mediciones</h2><p>Consulta, exporta o elimina registros.</p></div><div class="button-row"><button id="exportCsvBtn" class="btn btn-outline" type="button">Exportar CSV</button><button id="exportPdfBtn" class="btn btn-outline" type="button">Informe PDF</button></div></div>
+        <div class="table-wrap"><table><thead><tr><th>Fecha</th><th>Presión</th><th>Pulso</th><th>Momento</th><th>Notas</th><th>Acción</th></tr></thead><tbody id="historyBody"><tr><td colspan="6" class="empty-cell">Todavía no hay mediciones.</td></tr></tbody></table></div>
+      </section>
+
+      <section class="notice" role="note"><strong>Importante:</strong> TensiónFácil es una herramienta de registro, no de diagnóstico. Si tienes síntomas intensos o preocupantes, busca atención médica. Si una lectura es muy elevada, repítela tras descansar y sigue las indicaciones de un profesional sanitario.</section>
+    </main>
+    <footer>Los datos se guardan localmente en este navegador. No borres los datos del navegador sin crear antes una copia de seguridad.</footer>
+  </div>
+
+  <dialog id="profilesDialog">
+    <form method="dialog" class="dialog-close"><button class="close-btn" aria-label="Cerrar">×</button></form>
+    <h2>Perfiles</h2><p class="muted">Cada perfil mantiene su propio historial en este dispositivo.</p>
+    <label>Perfil activo<select id="profileSelect"></select></label>
+    <form id="newProfileForm" class="inline-form"><label for="newProfileName">Crear perfil</label><input id="newProfileName" maxlength="50" placeholder="Nombre del perfil" required><button class="btn btn-primary" type="submit">Añadir</button></form>
+    <div class="dialog-actions"><button id="deleteProfileBtn" class="btn btn-danger" type="button">Eliminar perfil activo</button><button class="btn btn-outline" type="button" data-close="profilesDialog">Cerrar</button></div>
+  </dialog>
+
+  <dialog id="settingsDialog">
+    <form method="dialog" class="dialog-close"><button class="close-btn" aria-label="Cerrar">×</button></form>
+    <h2>Ajustes y copias de seguridad</h2>
+    <p>Descarga una copia de todos los perfiles y sus mediciones para guardarla en un lugar seguro.</p>
+    <div class="dialog-actions"><button id="backupBtn" class="btn btn-primary" type="button">Descargar copia JSON</button><label class="btn btn-outline file-label">Restaurar copia<input id="restoreFile" type="file" accept="application/json,.json" hidden></label></div>
+    <p class="small-note">La restauración reemplaza los datos guardados en esta aplicación. Exporta una copia antes de restaurar.</p>
+    <div class="dialog-actions"><button class="btn btn-outline" type="button" data-close="settingsDialog">Cerrar</button></div>
+  </dialog>
+</body>
+</html>
